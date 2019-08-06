@@ -82,6 +82,7 @@
       }
     },
     mounted() {
+
       var _this=this;
       var code="";
       console.log("aaa");
@@ -89,7 +90,6 @@
         code=res.data.result;
         _this.moveCode(code,_this);
       })
-
 
     },
     methods:{
@@ -205,6 +205,7 @@
         parentBox = null;
         return parseInt(offset);
       },
+      //赋值
       moveCode(code,_this){
         var fn = {codeVluae : code};
         var box = document.querySelector("#code-box"),
