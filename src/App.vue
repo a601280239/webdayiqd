@@ -6,9 +6,14 @@
 </template>
 
 <script>
-export default {
-  name: 'App'
-}
+  export default {
+    name: 'App',
+    mounted() {
+      window.addEventListener("unload",()=>{
+        sessionStorage.setItem("state",JSON.stringify(this.$store.state))
+      })
+    }
+  }
 </script>
 
 <style>
