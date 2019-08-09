@@ -44,7 +44,7 @@ router.beforeEach((to, from, next)=>{
 
 //请求拦截器
 axios.interceptors.request.use((config)=>{
-console.log("bbbbb")
+
   if(config.url.includes("getCode")){//如果是获取验证码的路径
     //没有Cookie的话添加Cookie
     let aucokie=Cookies.get("authcode")
@@ -52,16 +52,47 @@ console.log("bbbbb")
       Cookies.set("authcode", "", {path: "/", domain: "localhost", age: -1});
     }
 
-    config.headers.token=store.state.token;
+
 
 
   }
+  if(config.url.includes("loginout")){//如果是获取验证码的路径
+    //没有Cookie的话添加Cookie
+    let aucokie=Cookies.get("authcode")
+    if(aucokie==null){
+      Cookies.set("authcode", "", {path: "/", domain: "localhost", age: -1});
+    }
 
 
+
+
+  }
+  config.headers.token=store.state.token;
 
   return config;
 })
+//音频引入
+import yinpin from '../static/tishiyin/tishiyin.mp3'
+import aiya from '../static/tishiyin/aiya.mp3'
+import en from '../static/tishiyin/en.mp3'
+import qingsong from '../static/tishiyin/dahuaxiyou.mp3'
 
+Vue.prototype.playAudio = (id,yinyue) => {
+  let buttonAudio = document.getElementById(id);
+  if(yinyue=="yinpin"){
+    buttonAudio.setAttribute('src',yinpin)
+  }
+  if(yinyue=="en"){
+    buttonAudio.setAttribute('src',en)
+  }
+  if(yinyue=="aiya"){
+    buttonAudio.setAttribute('src',aiya)
+  }
+  if(yinyue=="qingsong"){
+    buttonAudio.setAttribute('src',qingsong)
+  }
+  buttonAudio.play()
+}
 
 
 
