@@ -1,279 +1,288 @@
 <template>
   <div>
-    <div>
-      <el-form :inline="true" :model="where" class="demo-form-inline">
-        <el-form-item label="用户名">
-          <el-input v-model="where.name" placeholder="用户名"></el-input>
-        </el-form-item>
-        <el-form-item label="性别">
-          <el-select v-model="where.sex">
-            <el-option label="全部" value=0 ></el-option>
-            <el-option label="男" value=1></el-option>
-            <el-option label="女" value=2></el-option>
 
-          </el-select>
-        </el-form-item>
-        <el-form-item label="日期">
+    <el-tabs type="border-card">
+      <el-tab-pane label="用户管理">
+        <div>
+          <el-form :inline="true" :model="where" class="demo-form-inline">
+            <el-form-item label="用户名">
+              <el-input v-model="where.name" placeholder="用户名"></el-input>
+            </el-form-item>
+            <el-form-item label="性别">
+              <el-select v-model="where.sex">
+                <el-option label="全部" value=0 ></el-option>
+                <el-option label="男" value=1></el-option>
+                <el-option label="女" value=2></el-option>
+
+              </el-select>
+            </el-form-item>
+            <el-form-item label="日期">
+              <div class="block">
+
+                <el-date-picker
+                  v-model="where.dt1"
+                  value-format="yyyy-MM-dd"
+                  type="date"
+                  placeholder="选择日期">
+                </el-date-picker>
+                <el-date-picker
+                  v-model="where.dt2"
+                  value-format="yyyy-MM-dd"
+                  type="date"
+                  placeholder="选择日期">
+                </el-date-picker>
+              </div>
+
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="getList()">查询</el-button>
+
+            </el-form-item>
+          </el-form>
+
+
+
+        </div>
+        <el-button    type="primary" @click="add()">+新增用户</el-button>
+        <template>
+          <el-table
+            ref="multipleTable"
+            :data="tableData"
+            tooltip-effect="dark"
+            style="width: 100%"
+            @selection-change="handleSelectionChange">
+            <el-table-column
+              type="selection"
+              width="55">
+
+            </el-table-column>
+
+            <el-table-column
+
+              label="用户名"
+              width="150">
+              <template slot-scope="scope">
+                <el-popover
+                  placement="top-start"
+                  title="用户信息"
+                  width="200"
+                  trigger="hover">
+                  <el-image
+                    style="width: 50px; height: 50px"
+                    :src="url+scope.row.url"></el-image>
+                  <div>用户名：{{scope.row.userName}}</div>
+                  <div>登录名：{{scope.row.loginName}}</div>
+                  <div>性别：{{changeSex(scope.row.sex)}}</div>
+                  <div>角色：{{scope.row.roleName}}</div>
+                  <el-button slot="reference">{{scope.row.userName}}</el-button>
+                </el-popover>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="loginName"
+              label="登录名"
+              width="150">
+            </el-table-column>
+            <el-table-column
+              label="性别"
+              width="150">
+              <template slot-scope="scope">{{changeSex(scope.row.sex)}}</template>
+            </el-table-column>
+            <el-table-column
+              prop="tel"
+              label="电话"
+              width="150">
+            </el-table-column>
+
+
+            <el-table-column
+              label="图片"
+              width="150">
+              <template slot-scope="scope">
+                <el-image
+                  style="width: 50px; height: 50px"
+                  :src="url+scope.row.url"></el-image>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="角色"
+              width="150">
+              <template slot-scope="scope">{{scope.row.roleName}}</template>
+            </el-table-column>
+            <el-table-column label="操作">
+              <template slot-scope="scope">
+                <el-button
+                  size="mini"
+                  @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+                <el-button
+                  size="mini"
+                  type="danger"
+                  @click="handleDelete(scope.$index, scope.row)" v-if="scope.row.id!=pid">删除</el-button>
+                <el-button   size="mini" type="primary" @click="bdRole(scope.$index, scope.row)" v-if="scope.row.id!=pid">绑定角色</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+
           <div class="block">
-
-            <el-date-picker
-              v-model="where.dt1"
-              value-format="yyyy-MM-dd"
-              type="date"
-              placeholder="选择日期">
-            </el-date-picker>
-            <el-date-picker
-              v-model="where.dt2"
-              value-format="yyyy-MM-dd"
-              type="date"
-              placeholder="选择日期">
-            </el-date-picker>
+            <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="pageInfo.page"
+              :page-sizes="[5, 10, 15, 20]"
+              :page-size="pageInfo.pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="pageInfo.total">
+            </el-pagination>
           </div>
+        </template>
 
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="getList()">查询</el-button>
+        <div>
+          <el-dialog
+            title="操作用户"
+            :visible.sync="dialogVisible"
+            width="30%"
+            :before-close="handleClose">
+            <el-form label-width="100px" ref="entitymod" :model="entitymod">
 
-        </el-form-item>
-      </el-form>
+              <el-form-item label="用户名">
+                <el-input type="text" v-model="entitymod.userName" autocomplete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="登录用户">
+                <el-input type="text" v-model="entitymod.loginName" autocomplete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="密码">
+                <el-input type="password" v-model="entitymod.password" autocomplete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="确认密码">
+                <el-input type="password" v-model="entitymod.qpassWord" autocomplete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="电话">
+                <el-input type="text" v-model="entitymod.tel" autocomplete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="用户头像"  >
+                <el-image
+                  style="width: 50px; height: 50px"
+                  :src="url+entitymod.url"
+                  v-if="entitymod.url!=null"></el-image>
+                <el-upload
+                  class="avatar-uploader"
+                  action="http://localhost:10000/api/manger/addUser"
+                  ref="upload"
+                  :show-file-list="false"
+                  :on-change="handleAvatarChange"
+                  :on-success="handleAvatarSuccess"
+                  :auto-upload="false"
+                  :before-upload="beforeAvatarUpload"
+                  :on-error="beforeAvatarError"
+                  :data="{userName:entitymod.userName,loginName:entitymod.loginName,passWord:entitymod.password,tel:entitymod.tel,sex:entitymod.sex}">
+                  <img v-if="imageUrl" :src="imageUrl" class="avatar">
+                  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </el-upload>
+              </el-form-item>
+              <el-form-item label="性别">
+                <el-radio-group v-model="entitymod.sex">
+                  <el-radio-button label="1">男</el-radio-button>
 
-
-
-    </div>
-    <el-button    type="primary" @click="add()">+新增用户</el-button>
-    <template>
-      <el-table
-        ref="multipleTable"
-        :data="tableData"
-        tooltip-effect="dark"
-        style="width: 100%"
-        @selection-change="handleSelectionChange">
-        <el-table-column
-          type="selection"
-          width="55">
-
-        </el-table-column>
-
-        <el-table-column
-
-          label="用户名"
-          width="150">
-          <template slot-scope="scope">
-            <el-popover
-            placement="top-start"
-            title="用户信息"
-            width="200"
-            trigger="hover">
-              <el-image
-                style="width: 50px; height: 50px"
-                :src="url+scope.row.url"></el-image>
-              <div>用户名：{{scope.row.userName}}</div>
-              <div>登录名：{{scope.row.loginName}}</div>
-              <div>性别：{{changeSex(scope.row.sex)}}</div>
-              <div>角色：{{scope.row.roleName}}</div>
-              <el-button slot="reference">{{scope.row.userName}}</el-button>
-          </el-popover>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="loginName"
-          label="登录名"
-          width="150">
-        </el-table-column>
-        <el-table-column
-          label="性别"
-          width="150">
-          <template slot-scope="scope">{{changeSex(scope.row.sex)}}</template>
-        </el-table-column>
-        <el-table-column
-          prop="tel"
-          label="电话"
-          width="150">
-        </el-table-column>
-
-
-        <el-table-column
-          label="图片"
-          width="150">
-          <template slot-scope="scope">
-            <el-image
-              style="width: 50px; height: 50px"
-              :src="url+scope.row.url"></el-image>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="角色"
-          width="150">
-          <template slot-scope="scope">{{scope.row.roleName}}</template>
-        </el-table-column>
-        <el-table-column label="操作">
-          <template slot-scope="scope">
-            <el-button
-              size="mini"
-              @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-            <el-button
-              size="mini"
-              type="danger"
-              @click="handleDelete(scope.$index, scope.row)" v-if="scope.row.id!=pid">删除</el-button>
-            <el-button   size="mini" type="primary" @click="bdRole(scope.$index, scope.row)" v-if="scope.row.id!=pid">绑定用户</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-
-      <div class="block">
-        <el-pagination
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page="pageInfo.page"
-          :page-sizes="[2, 5, 10, 20]"
-          :page-size="pageInfo.pageSize"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="pageInfo.total">
-        </el-pagination>
-      </div>
-    </template>
-
-    <div>
-      <el-dialog
-        title="操作用户"
-        :visible.sync="dialogVisible"
-        width="30%"
-        :before-close="handleClose">
-        <el-form label-width="100px" ref="entitymod" :model="entitymod">
-
-          <el-form-item label="用户名">
-            <el-input type="text" v-model="entitymod.userName" autocomplete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="登录用户">
-            <el-input type="text" v-model="entitymod.loginName" autocomplete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="密码">
-            <el-input type="password" v-model="entitymod.password" autocomplete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="确认密码">
-            <el-input type="password" v-model="entitymod.qpassWord" autocomplete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="电话">
-            <el-input type="text" v-model="entitymod.tel" autocomplete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="用户头像"  >
-            <el-image
-              style="width: 50px; height: 50px"
-              :src="url+entitymod.url"
-              v-if="entitymod.url!=null"></el-image>
-            <el-upload
-              class="avatar-uploader"
-              action="http://localhost:10000/api/manger/addUser"
-              ref="upload"
-              :show-file-list="false"
-              :on-change="handleAvatarChange"
-              :on-success="handleAvatarSuccess"
-              :auto-upload="false"
-              :before-upload="beforeAvatarUpload"
-              :on-error="beforeAvatarError"
-              :data="{userName:entitymod.userName,loginName:entitymod.loginName,passWord:entitymod.password,tel:entitymod.tel,sex:entitymod.sex}">
-              <img v-if="imageUrl" :src="imageUrl" class="avatar">
-              <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-            </el-upload>
-          </el-form-item>
-          <el-form-item label="性别">
-            <el-radio-group v-model="entitymod.sex">
-              <el-radio-button label="1">男</el-radio-button>
-
-              <el-radio-button label="2">女</el-radio-button>
-            </el-radio-group>
-          </el-form-item>
+                  <el-radio-button label="2">女</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
 
 
 
 
-        </el-form>
+            </el-form>
 
-        <span slot="footer" class="dialog-footer">
+            <span slot="footer" class="dialog-footer">
     <el-button @click="handleClose">取 消</el-button>
     <el-button type="primary" @click="save()">确 定</el-button>
   </span>
-      </el-dialog>
+          </el-dialog>
 
-    </div>
+        </div>
 
-    <div>
-      <el-dialog
-        title="修改用户"
-        :visible.sync="dialogVisible1"
-        width="30%"
-        :before-close="handleClose">
-        <el-form label-width="100px" ref="entitymod" :model="entitymod">
+        <div>
+          <el-dialog
+            title="修改用户"
+            :visible.sync="dialogVisible1"
+            width="30%"
+            :before-close="handleClose">
+            <el-form label-width="100px" ref="entitymod" :model="entitymod">
 
-          <el-form-item label="用户名">
-            <el-input type="text" v-model="entitymod.userName" autocomplete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="登录用户">
-            <el-input type="text" v-model="entitymod.loginName" autocomplete="off"></el-input>
-          </el-form-item>
+              <el-form-item label="用户名">
+                <el-input type="text" v-model="entitymod.userName" autocomplete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="登录用户">
+                <el-input type="text" v-model="entitymod.loginName" autocomplete="off"></el-input>
+              </el-form-item>
 
 
-          <el-form-item label="电话">
-            <el-input type="text" v-model="entitymod.tel" autocomplete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="用户头像"  >
-            <el-image
-              style="width: 50px; height: 50px"
-              :src="url+entitymod.url"
-              v-if="entitymod.url!=null"></el-image>
-            <el-upload
-              class="avatar-uploader"
-              action="http://localhost:10000/api/manger/updateUser"
-              ref="upload1"
-              :show-file-list="false"
-              :on-change="handleAvatarChange"
-              :on-success="handleAvatarSuccess"
-              :auto-upload="false"
-              :before-upload="beforeAvatarUpload"
-              :on-error="beforeAvatarError"
-              :data="{id:this.entitymod.id,userName:entitymod.userName,loginName:entitymod.loginName,tel:entitymod.tel,sex:entitymod.sex}">
-              <img v-if="imageUrl" :src="imageUrl" class="avatar">
-              <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-            </el-upload>
-          </el-form-item>
-          <el-form-item label="性别">
-            <el-radio-group v-model="entitymod.sex">
-              <el-radio-button label="1">男</el-radio-button>
+              <el-form-item label="电话">
+                <el-input type="text" v-model="entitymod.tel" autocomplete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="用户头像"  >
+                <el-image
+                  style="width: 50px; height: 50px"
+                  :src="url+entitymod.url"
+                  v-if="entitymod.url!=null"></el-image>
+                <el-upload
+                  class="avatar-uploader"
+                  action="http://localhost:10000/api/manger/updateUser"
+                  ref="upload1"
+                  :show-file-list="false"
+                  :on-change="handleAvatarChange"
+                  :on-success="handleAvatarSuccess"
+                  :auto-upload="false"
+                  :before-upload="beforeAvatarUpload"
+                  :on-error="beforeAvatarError"
+                  :data="{id:this.entitymod.id,userName:entitymod.userName,loginName:entitymod.loginName,tel:entitymod.tel,sex:entitymod.sex}">
+                  <img v-if="imageUrl" :src="imageUrl" class="avatar">
+                  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </el-upload>
+              </el-form-item>
+              <el-form-item label="性别">
+                <el-radio-group v-model="entitymod.sex">
+                  <el-radio-button label="1">男</el-radio-button>
 
-              <el-radio-button label="2">女</el-radio-button>
-            </el-radio-group>
-          </el-form-item>
-        </el-form>
-        <span slot="footer" class="dialog-footer">
+                  <el-radio-button label="2">女</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
             <el-button @click="handleClose">取 消</el-button>
         <el-button type="primary" @click="update()">确 定</el-button>
         </span>
-      </el-dialog>
+          </el-dialog>
 
-    </div>
-    <div>
-      <el-dialog
-        title="绑定角色"
-        :visible.sync="dialogVisible2"
-        width="30%">
-        角色：<template>
-          <el-select v-model="value" filterable placeholder="请选择">
-            <el-option
-              v-for="item in options"
-              :key="item.id"
-              :label="item.roleName"
-              :value="item.id">
-            </el-option>
-          </el-select>
-        </template>
-      <span slot="footer" class="dialog-footer">
+        </div>
+        <div>
+          <el-dialog
+            title="绑定角色"
+            :visible.sync="dialogVisible2"
+            width="30%">
+            角色：<template>
+            <el-select v-model="value" filterable placeholder="请选择">
+              <el-option
+                v-for="item in options"
+                :key="item.id"
+                :label="item.roleName"
+                :value="item.id">
+              </el-option>
+            </el-select>
+          </template>
+            <span slot="footer" class="dialog-footer">
             <el-button @click="handleClose">取 消</el-button>
         <el-button type="primary" @click="addRole()">确 定</el-button>
         </span>
-      </el-dialog>
+          </el-dialog>
 
-    </div>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="批量添加">配置管理</el-tab-pane>
+    </el-tabs>
+
+
+
   </div>
 
 
@@ -321,7 +330,7 @@
     },
       methods: {
         addRole(){
-          alert(this.userId);
+
           this.$axios.post(this.domain.serverpath+"addUr",{userId:this.userId,roleId:this.value}).then((res)=>{
             if(res.code=200){
             this.$message({
@@ -369,6 +378,12 @@
             "?page="+page+"&pageSize="+pageSize+"&sex="+this.where.sex+"&dt1="+this.where.dt1+"&dt2="+this.where.dt2+"&name="+this.where.name).then((res)=>{
             this.tableData=res.data.content;
             this.pageInfo.total=res.data.totalElements;
+          }).catch((x)=>{
+            this.$message({
+              message: '你没有操作权限',
+              type: 'error',
+              duration:'1000'
+            });
           })
         },
 
@@ -400,6 +415,12 @@
           this.dialogVisible=false;
           this.$axios.post(this.domain.serverpath+"findRole").then((res)=>{
             this.options=res.data;
+          }).catch((x)=>{
+            this.$message({
+              message: '你没有操作权限',
+              type: 'error',
+              duration:'1000'
+            });
           })
           console.log(index, row);
         },
@@ -457,6 +478,8 @@
           this.dialogVisible=false;
           this.dialogVisible2=false;
           this.dialogVisible1=false;
+          this.entitymod={};
+          this.imageUrl="";
           this.getList(this.pageInfo.page,this.pageInfo.pageSize);
         },
         add(){
@@ -543,9 +566,20 @@
             });
             return;
           }
+
           if(this.entitymod.password!=this.entitymod.qpassWord){
             this.$message({
               message: '两次密码不一样',
+              type: 'error',
+              duration:'1000'
+            });
+            return;
+          }
+          var reg = /(^1\d{10}$)|(^[0-9]\d{7}$)/;
+          var re = new RegExp(reg);
+          if(!re.test(this.entitymod.tel)){
+            this.$message({
+              message: '手机号格式不正确',
               type: 'error',
               duration:'1000'
             });
@@ -605,7 +639,7 @@
 
 
       if(this.imageUrl!=null&&this.imageUrl!="") {
-        alert(1);
+
         this.$refs.upload1.submit();
       }else{
         this.$axios.post(this.domain.serverpath+"updateYh",this.entitymod).then((res)=>{

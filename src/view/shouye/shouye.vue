@@ -29,9 +29,11 @@
             </el-dropdown>
 
             <span ref="userinfo_username" >{{username}}</span>
-            <el-image
-              style="width: 25px; height: 25px;margin-top:10px"
-              :src="url+this.$store.state.userInfo.url" ></el-image>
+
+              <el-image
+                style="width: 25px; height: 25px ;border-radius:50px;top:5px "
+                :src="url+this.$store.state.userInfo.url" ></el-image>
+
             <input ref="userinfo_userid" type="hidden" v-model="userid">
             &nbsp;&nbsp;&nbsp;
             <el-dropdown trigger="click" >
@@ -161,9 +163,11 @@
           if(command=="b"){//退出操作
 
             this.$confirm('确认登出？').then(_ => {
+
                this.$axios.post(this.domain.ssoserverpath+"loginout",{id:this.$store.state.userInfo.id}).then((response)=>{
                    let sts=response.data.success;
                    if(sts=="ok"){
+                     window.sessionStorage.clear();
                       this.$router.push({path:'/'});
                    }
                })

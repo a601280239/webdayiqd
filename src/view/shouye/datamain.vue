@@ -1,5 +1,5 @@
 <template>
-  <el-main id="et" :style="{height:wheight+'px','background-color':'#ffebcd'}">
+  <el-main id="et" :style="{height:wheight+'px','background-color':'#FFFFFF'}">
 
       <router-view style="padding: 0px" ></router-view>
 
