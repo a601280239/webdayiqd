@@ -31,7 +31,10 @@
             </div>
           </div>
         </el-form-item>
-
+        <template >
+          <!-- `checked` 为 true 或 false -->
+          <el-checkbox v-model="checked">七天免登录</el-checkbox>
+        </template>
 
         <div class="login-btn">
           <el-button type="primary" @click="submitForm('ruleForm')">登录</el-button>
@@ -51,10 +54,13 @@
 </template>
 
 <script>
+  import {delCookie,setCookie,getCookie,} from "../../js/util";
+
   export default {
     name: "login",
     data(){
       return{
+        checked:false,
         divimg:{//背景图片的使用
           backgroundImage:"url(" + require('../../assets/yun.jpg') + ")",
           backgroundRepeat: "no-repeat",
@@ -83,13 +89,23 @@
     },
     mounted() {
 
-      var _this=this;
-      var code="";
-      console.log("aaa");
-      this.$axios.post(this.domain.ssoserverpath+'getCode').then((res)=>{
-        code=res.data.result;
-        _this.moveCode(code,_this);
-      })
+
+        var _this=this;
+        var code="";
+        console.log("aaa");
+        this.$axios.post(this.domain.ssoserverpath+'getCode').then((res)=>{
+          code=res.data.result;
+          _this.moveCode(code,_this);
+
+          if(getCookie("loginName")!=null&&getCookie("password")!=null){
+
+            this.$refs.coderef.value=code;
+           this.ruleForm.username=getCookie("loginName");
+            this.ruleForm.password=getCookie("password");
+            this.submitForm('ruleForm');
+          }
+        })
+
 
     },
     methods:{
@@ -143,11 +159,17 @@
           this.$axios.post(this.domain.ssoserverpath+"login",par).then((response)=>{
             let respo=response.data;
             if(respo.code==200){
+              if(this.checked){
+                setCookie("loginName",this.ruleForm.username,7);
+                setCookie("password",this.ruleForm.password,7);
+              }
+
               //存储token到vuex中，
-              this.$store.state.token=response.data.token
-              this.$store.state.userInfo=response.data.result
-              window.sessionStorage.setItem("userInfo",JSON.stringify(response.data.result))
-              window.sessionStorage.setItem("token",response.data.token)
+            /*  this.$store.state.token=response.data.token
+              this.$store.state.userInfo=response.data.result*/
+              window.localStorage.setItem("userInfo",JSON.stringify(response.data.result))
+              //JSON.parse(window.localStorage.getItem("userInfo"));
+              window.localStorage.setItem("token",response.data.token)
               //关闭加载窗
               this.$data.percent=100
               //隐藏进度条

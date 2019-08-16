@@ -12,7 +12,7 @@
           </el-form>
 
         </div>
-        <el-button    type="primary" @click="add()">+新增角色</el-button>
+        <el-button    type="primary" @click="add()" v-if="userInfo.authmap.addRole!=null">+新增角色</el-button>
         <template>
           <el-table
             ref="multipleTable"
@@ -57,8 +57,8 @@
                 <el-button
                   size="mini"
                   type="danger"
-                  @click="handleDelete(scope.$index, scope.row)" v-if="scope.row.id!=pid">删除</el-button>
-                <el-button   size="mini" type="primary" @click="bdQx(scope.$index, scope.row)"  v-if="scope.row.id!=pid">绑定权限</el-button>
+                  @click="handleDelete(scope.$index, scope.row)"  v-if="userInfo.authmap.delRole!=null">删除</el-button>
+                <el-button   size="mini" type="primary" @click="bdQx(scope.$index, scope.row)" v-if="userInfo.authmap.addRm!=null" >绑定权限</el-button>
 
               </template>
             </el-table-column>
@@ -152,7 +152,7 @@
 
             },
             total:5,
-            pid:this.$store.state.userInfo.roleInfo.id,
+            userInfo:JSON.parse(window.localStorage.getItem("userInfo")),
             entitymod:{},
             dialogVisible:false,
             dialogVisible1:false,
@@ -167,9 +167,8 @@
           }
         },
         mounted() {
-          this.$axios.post(this.domain.serverpath+"findMenu").then((res)=>{
-            this.data=res.data;
-          })
+         this.data=this.userInfo.listMenuInfo;
+
           this.getList(1,this.where.pageSize);
         },
         methods:{
@@ -179,7 +178,7 @@
             let k2=this.$refs.tree.getHalfCheckedKeys();
             let k3=[];
             k3=k3.concat(k1).concat(k2);
-
+          this.entitymod.urid=this.userInfo.roleInfo.id;
           this.entitymod.ids=k3;
 
             this.$axios.post(this.domain.serverpath+"addRm",this.entitymod).then((res)=>{
@@ -223,10 +222,44 @@
 
               this.tableData=res.data.content;
               this.total=res.data.totalElements;
+            }).catch((x)=>{
+              this.$message({
+                message: '你没有操作权限',
+                type: 'error',
+                duration:'1000'
+              });
             })
           },
           //删除方法
           handleDelete(index, row) {
+            var id="1160875187323920384"
+
+            if(row.id===id){
+              this.$message({
+                message: '该角色是不能删除，其他功能用到',
+                type: 'error',
+                duration:'1000'
+              });
+              return;
+            }
+            if(row.id==this.userInfo.roleInfo.id){
+              this.$message({
+                message: '你正在使用该角色，无法删除',
+                type: 'error',
+                duration:'1000'
+              });
+              return;
+
+            }
+
+            if(row.leval<=this.userInfo.roleInfo.leval){
+              this.$message({
+                message: '你无法删除当前角色,是你上级或者平级',
+                type: 'error',
+                duration:'1000'
+              });
+              return;
+            }
 
             this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
               confirmButtonText: '确定',
@@ -271,7 +304,7 @@
 
           },
           handleCurrentChange(val) {
-            this._w.page=val;
+            this.where.page=val;
             this.getList(val,this.where.pageSize);
             console.log(`当前页: ${val}`);
           },
@@ -305,7 +338,9 @@
               return;
             }
 
-
+         if(this.userInfo.roleInfo.leval!=4){
+           this.entitymod.leval=this.userInfo.roleInfo.leval+1;
+         }
 
               this.$axios.post(this.domain.serverpath+"addRole",this.entitymod).then((res)=>{
                 if(res.data.code==500){
@@ -335,6 +370,33 @@
               })
             },
           bdQx(index, row) {
+            if(row.id==1160875187323920384&&this.userInfo.roleInfo.leval>1){
+              this.$message({
+                message: '只有最高级管理员能为他绑定权限',
+                type: 'error',
+                duration:'1000'
+              });
+              return;
+            }
+            if(this.userInfo.roleInfo)
+            if(row.id==this.userInfo.roleInfo.id){
+              this.$message({
+                message: '你正在使用该角色，无法操作权限',
+                type: 'error',
+                duration:'1000'
+              });
+              return;
+
+            }
+          if(row.leval<=this.userInfo.roleInfo.leval){
+            this.$message({
+              message: '你无法操作的当前角色，是你上级或者平级',
+              type: 'error',
+              duration:'1000'
+            });
+            return;
+          }
+
             this.entitymod=row;
 
 
@@ -342,9 +404,11 @@
 
 
 
-            this.dialogVisible1=true;  setTimeout(()=>{
-              this.$refs.tree.setCheckedNodes(row.menuInfoList.filter(i=>i.leval == 4));
-            },0)
+              this.dialogVisible1=true;  setTimeout(()=>{
+                this.$refs.tree.setCheckedNodes(row.menuInfoList.filter(i=>i.leval == 4));
+              },0)
+
+
 
           },
 

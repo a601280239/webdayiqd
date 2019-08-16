@@ -23,16 +23,16 @@
               <i class="el-icon-setting" style="margin-right: 15px"></i>
               <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item command="c">首页</el-dropdown-item>
-                <el-dropdown-item command="a">查看</el-dropdown-item>
-                <el-dropdown-item command="b" @click="handleCommand()">退出</el-dropdown-item>
+                <el-dropdown-item command="a" >查看</el-dropdown-item>
+                <el-dropdown-item command="b">退出</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
 
             <span ref="userinfo_username" >{{username}}</span>
 
               <el-image
-                style="width: 25px; height: 25px ;border-radius:50px;top:5px "
-                :src="url+this.$store.state.userInfo.url" ></el-image>
+                style="width: 30px; height: 30px;border-radius:50px;top:5px "
+                :src="url1" ></el-image>
 
             <input ref="userinfo_userid" type="hidden" v-model="userid">
             &nbsp;&nbsp;&nbsp;
@@ -61,21 +61,20 @@
     </el-container>
 
     <el-dialog
-          title="当前用户信息"
-          :visible.sync="dialog1Visible"
-          width="40%"
-          >
-            <img src="http://127.0.0.1:8090/USER/2019-01-16/" width="150px">
-            <el-form  :inline="true" label-width="100px" class="demo-form-inline">
-              <el-form-item label="用户名:">{{this.$store.state.userInfo.userName}}</el-form-item>
-              <el-form-item label="登录名:">{{this.$store.state.userInfo.loginName}}</el-form-item>
-              <el-form-item label="性别:">{{this.$store.state.userInfo.sex}}</el-form-item>
-              <br>
-              <el-form-item label="电话:">{{this.$store.state.userInfo.tel}}</el-form-item>
+      title="查看用户信息"
+      :visible.sync="ckbiao"
+      width="30%">
+
+            <el-form  label-width="100px" class="demo-form-inline"  :model="userInfo">
+              <el-form-item label="用户名:">{{userInfo.userName}}</el-form-item>
+              <el-form-item label="登录名:">{{userInfo.loginName}}</el-form-item>
+              <el-form-item label="性别:">{{this.changeSex(userInfo.sex)}}</el-form-item>
+              <el-form-item label="用户头像:"><img :src="url1" width="100" height="100px"></el-form-item>
+              <el-form-item label="电话:">{{userInfo.tel}}</el-form-item>
             </el-form>
 
           <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="dialog1Visible = false">确 定</el-button>
+        <el-button type="primary" @click="ckbiao=false">关闭</el-button>
       </span>
     </el-dialog>
 
@@ -85,6 +84,7 @@
 <script>
   import mymenu from './datamenu.vue'
   import mymain from './datamain.vue'
+  import {delCookie} from "../../js/util";
 
   const userinfo={};
 
@@ -96,9 +96,10 @@
         webSocket:null,
         mycontent:"点击打开菜单",
         dialogVisible: false,
-        dialog1Visible: false,
-        userid:this.domain.userinfo.userid,
-        username:this.domain.userinfo.username,
+        ckbiao: false,
+        userInfo:JSON.parse(window.localStorage.getItem("userInfo")),
+        userid:JSON.parse(window.localStorage.getItem("userInfo")).id,
+        username:JSON.parse(window.localStorage.getItem("userInfo")).userName,
         currInfo:{
           userName:'',
           loginName:'',
@@ -106,13 +107,19 @@
           tel:'',
           buMen:''
         },
-        url:"http://localhost:8090/",
+        url1:"http://www.image.com/group1/"+JSON.parse(window.localStorage.getItem("userInfo")).url+"_100x100.png",
+
       }
     },
     components:{mymenu,mymain},
     name: "shouye",
     methods:{
-
+      changeSex(value){
+        if(value==1){
+          return "男"
+        }
+        return  "女"
+      },
       openWebSocket(evt){//打开通道
         //打开通道提示音
         this.playAudio("en","en")
@@ -164,10 +171,12 @@
 
             this.$confirm('确认登出？').then(_ => {
 
-               this.$axios.post(this.domain.ssoserverpath+"loginout",{id:this.$store.state.userInfo.id}).then((response)=>{
+               this.$axios.post(this.domain.ssoserverpath+"loginout",{id:this.userInfo.id}).then((response)=>{
                    let sts=response.data.success;
                    if(sts=="ok"){
-                     window.sessionStorage.clear();
+                     delCookie("loginName");
+                     delCookie("password");
+                     window.localStorage.clear();
                       this.$router.push({path:'/'});
                    }
                })
@@ -177,22 +186,13 @@
             });
 
           }else if(command=="a"){
-             //获取一下隐藏域中的用户ID
-             let userid= this.$refs.userinfo_userid.value;
-             //到后台后获取用户的信息
-             this.$axios.post(this.domain.serverpath+"user/getUserInfo",JSON.stringify({userid:userid})).then((response)=>{
-                 //获取用户信息
-                 let userinfo=response.data.result;
-                 //打开用户信息的弹出层
-                 this.$data.dialog1Visible=true;
-                 //填充用户数据
-                 this.$data.currInfo=response.data.result
-             })
+            this.ckbiao=true;
 
           }else if(command=="c"){
              this.$router.push({path:"/system"})
           }
-      }
+      },
+
     },
     mounted(){
        //登录之后提示
@@ -200,15 +200,18 @@
        //初始化webSocket
 
 
-       if(this.$route.query.username!=null&& this.$route.query.username!='undefind'){
+       /*if(this.$route.query.username!=null&& this.$route.query.username!='undefind'){
 
          this.stores.userinfo.username=this.$route.query.username;
          this.domain.userinfo.userid=this.$route.query.userid;
 
-       }
-      this.$data.username=this.$store.state.userInfo.userName;
+       }*/
+      this.userInfo=JSON.parse(window.localStorage.getItem("userInfo"));
 
-       this.$data.userid=this.domain.userinfo.userid;
+
+      this.$data.username=JSON.parse(window.localStorage.getItem("userInfo")).userName;
+
+       this.$data.userid=JSON.parse(window.localStorage.getItem("userInfo")).userid;
     }
   }
 </script>

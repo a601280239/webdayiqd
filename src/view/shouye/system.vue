@@ -61,58 +61,25 @@
         <el-card class="box-card" >
 
           <div slot="header" class="clearfix">
-            <span style="font-weight:bold">操作帮助</span>
-            <div style="text-align: center"><span>使用蛟龙快速组织信息</span></div>
+            <span style="font-weight:bold">统计信息</span>
+
           </div>
-          <div class="text item">
-                <div style="margin-left:50px;float:left;height:100px">
-                  <el-tooltip content="点击创库" placement="top" effect="light">
-                      <span >
-                         <span><img src="../../assets/tiku.png"></span>
-                         <br>
-                         <span >创建信息</span>
-                      </span>
-                  </el-tooltip>
-                </div>
-                <div style="margin-left:50px;float:left">
-                  <el-tooltip content="点击导入信息" placement="top" effect="light">
-                      <span >
-                         <span><img src="../../assets/daoru.jpg" style="width:48px"></span>
-                         <br>
-                         <span >导入信息</span>
-                      </span>
-                  </el-tooltip>
-                </div>
-                <div style="margin-left:50px;float:left">
-                  <el-tooltip content="点击创建信息" placement="top" effect="light">
-                          <span >
-                             <span><img src="../../assets/create.png" style="width:48px"></span>
-                             <br>
-                             <span >创建信息</span>
-                          </span>
-                  </el-tooltip>
-                </div>
-                <div style="margin-left:50px;float:left">
+              <div>
+                <template>
+                  <!--为echarts准备一个具备大小的容器dom-->
+                  <div id="main" style="width: 100%;height: 400px;"></div>
+                </template>
 
-                  <el-badge :value="0" class="item">
-                    <el-tooltip content="点击查看结果" placement="top" effect="light">
-                          <span >
-                             <span><img src="../../assets/chakan.jpg" style="width:48px"></span>
-                             <br>
-                             <span >查看结果</span>
-                          </span>
-                    </el-tooltip>
-                  </el-badge>
+              </div>
 
 
-                </div>
-            </div>
         </el-card>
       </div>
     </div>
 </template>
 
 <script>
+  import echarts from 'echarts'
     export default {
         name: "system",
         data(){
@@ -121,8 +88,76 @@
             styleel:{
               left:'200%'
             },
+            charts: '',
+            /*  opinion: ["1", "3", "3", "4", "5"],*/
+            opinionData: ["30", "20", "40", "40", "50"],
+            data1:["1", "3", "3", "4", "5"],
+
           }
+        },
+      watch:{
+        opinionData(v,f){
+          this.drawLine('main')
         }
+      },
+      methods: {
+        drawLine(id) {
+
+          this.charts = echarts.init(document.getElementById(id))
+          this.charts.setOption({
+            title:{
+              text:'7天登录数据统计'
+            },
+            tooltip: {
+              trigger: 'axis'
+            },
+            legend: {
+              data: ['7天登录数']
+            },
+            grid: {
+              left: '3%',
+              right: '4%',
+              bottom: '3%',
+              containLabel: true
+            },
+
+            toolbox: {
+              feature: {
+                saveAsImage: {}
+              }
+            },
+            xAxis: {
+              type: 'category',
+              boundaryGap: false,
+              data: this.opinionData
+
+            },
+            yAxis: {
+              type: 'value'
+            },
+
+            series: [{
+              name: '登录次数',
+              type: 'line',
+              stack: '总量',
+              data: this.data1
+            }]
+          })
+        }
+      },
+      mounted() {
+        this.$axios.post(this.domain.ssoserverpath+"loginCount").then((res)=>{
+          console.log(res.data.key1);
+          this.opinionData=res.data.key1;
+          this.data1=res.data.value1;
+        })
+
+        this.$nextTick(function() {
+          this.drawLine('main')
+        })
+      }
+
+
     }
 </script>
 
@@ -145,4 +180,10 @@
   .box-card {
     width:99.5%;
   }
+  * {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
 </style>

@@ -17,7 +17,7 @@
       @node-click="handleNodeClick">
     </el-tree>
     <div>
-      <div>
+      <div  v-if="userInfo.authmap.addMenu!=null||userInfo.authmap.delMenu!=null||userInfo.authmap.updateMenu!=null">
         <el-dialog
           :title="menuName"
           :visible.sync="dialogVisible"
@@ -25,10 +25,10 @@
           width="33%"
           :before-close="handleClose">
           <el-row>
-            <el-button icon="el-icon-plus" circle @click="addMenu"></el-button>
-            <el-button type="primary" icon="el-icon-edit" circle @click="updateMenu"></el-button>
-            <el-button type="danger" icon="el-icon-delete" circle @click="deleteMenu"></el-button>
-            <el-button type="warning" icon="el-icon-star-off" circle @click="ownAddMenu"></el-button>
+            <el-button icon="el-icon-plus" circle @click="addMenu"  v-if="userInfo.authmap.addMenu!=null"></el-button>
+            <el-button type="primary" icon="el-icon-edit" circle @click="updateMenu"    v-if="userInfo.authmap.updateMenu!=null"></el-button>
+            <el-button type="danger" icon="el-icon-delete" circle @click="deleteMenu"   v-if="userInfo.authmap.delMenu!=null"></el-button>
+            <el-button type="warning" icon="el-icon-star-off" circle @click="ownAddMenu"   v-if="userInfo.authmap.addMenu!=null"></el-button>
           </el-row>
           <hr/>
           <el-form :inline="true" :model="entitymod" :hidden="addHidden"  v-if="entitymod.leval!=4" label-position="left" >
@@ -158,8 +158,8 @@
           addHidden:true,
           updateHidden:true,
           deleteHidden:true,
-          addOwnMenu:true
-
+          addOwnMenu:true,
+          userInfo:JSON.parse(window.localStorage.getItem("userInfo")),
 
         };
       },
@@ -243,6 +243,15 @@
           this.addOwnMenu=true;
         },
         deleteMenu(){
+          if(this.userInfo.roleInfo.leval!=1){
+            this.$message({
+              message: '只有一级管理员有权限删除',
+              type: 'warning',
+              duration:'1000'
+            });
+            return;
+          }
+
           this.addHidden=true;
           this.updateHidden=true;
           this.deleteHidden=false;
@@ -251,12 +260,25 @@
           this.$refs.tree.setCheckedKeys([id]);
         },
         ownAddMenu(){
+          if(this.userInfo.roleInfo.leval!=1){
+            this.$message({
+              message: '只有一级管理员有权限添加',
+              type: 'warning',
+              duration:'1000'
+            });
+            return;
+          }
           this.addHidden=true;
           this.updateHidden=true;
           this.deleteHidden=true;
           this.addOwnMenu=false;
         },
         getCheckedKeys() {
+
+          this.entitymod.urid=this.userInfo.roleInfo.id;
+          this.entitymod.uleval=this.userInfo.roleInfo.leval;
+          alert(this.entitymod.uleval);
+
            var url="";
            if(this.addHidden==false){
              url="addMenu";
@@ -269,12 +291,15 @@
                return;
              }
 
+
+
              this.entitymod.parentId=this.entitymod.id;
              this.entitymod.leval=this.entitymod.leval+1;
              this.entitymod.menuName=this.entitymod.menuNameAdd;
              this.entitymod.url=this.entitymod.urlAdd;
            }
             if(this.addOwnMenu==false){
+                url="addMenu";
                 this.entitymod.leval=1;
                 this.entitymod.parentId=0;
                 this.entitymod.menuName=this.entitymod.menuNameAdd;

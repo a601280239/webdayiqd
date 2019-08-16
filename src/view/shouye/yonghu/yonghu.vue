@@ -43,7 +43,7 @@
 
 
         </div>
-        <el-button    type="primary" @click="add()">+新增用户</el-button>
+        <el-button    type="primary" @click="add()"  v-if="userInfo.authmap.addYh!=null">+新增用户</el-button><el-button    type="primary" @click="downExcel()"   v-if="userInfo.authmap.downexcel!=null">导出当前页数据</el-button>
         <template>
           <el-table
             ref="multipleTable"
@@ -68,8 +68,8 @@
                   width="200"
                   trigger="hover">
                   <el-image
-                    style="width: 50px; height: 50px"
-                    :src="url+scope.row.url"></el-image>
+                    style="width: 100px; height: 100px"
+                    :src="url+scope.row.url+urlm1"></el-image>
                   <div>用户名：{{scope.row.userName}}</div>
                   <div>登录名：{{scope.row.loginName}}</div>
                   <div>性别：{{changeSex(scope.row.sex)}}</div>
@@ -101,7 +101,7 @@
               <template slot-scope="scope">
                 <el-image
                   style="width: 50px; height: 50px"
-                  :src="url+scope.row.url"></el-image>
+                  :src="url+scope.row.url+urlm"></el-image>
               </template>
             </el-table-column>
             <el-table-column
@@ -113,12 +113,12 @@
               <template slot-scope="scope">
                 <el-button
                   size="mini"
-                  @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+                  @click="handleEdit(scope.$index, scope.row)" v-if="userInfo.authmap.updateYh!=null">编辑</el-button>
                 <el-button
                   size="mini"
                   type="danger"
-                  @click="handleDelete(scope.$index, scope.row)" v-if="scope.row.id!=pid">删除</el-button>
-                <el-button   size="mini" type="primary" @click="bdRole(scope.$index, scope.row)" v-if="scope.row.id!=pid">绑定角色</el-button>
+                  @click="handleDelete(scope.$index, scope.row)" v-if="userInfo.authmap.deleteYh!=null">删除</el-button>
+                <el-button   size="mini" type="primary" @click="bdRole(scope.$index, scope.row)" v-if="userInfo.authmap.addUr!=null">绑定角色</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -161,10 +161,7 @@
                 <el-input type="text" v-model="entitymod.tel" autocomplete="off"></el-input>
               </el-form-item>
               <el-form-item label="用户头像"  >
-                <el-image
-                  style="width: 50px; height: 50px"
-                  :src="url+entitymod.url"
-                  v-if="entitymod.url!=null"></el-image>
+
                 <el-upload
                   class="avatar-uploader"
                   action="http://localhost:10000/api/manger/addUser"
@@ -217,13 +214,11 @@
               </el-form-item>
 
 
-              <el-form-item label="电话">
-                <el-input type="text" v-model="entitymod.tel" autocomplete="off"></el-input>
-              </el-form-item>
+
               <el-form-item label="用户头像"  >
                 <el-image
                   style="width: 50px; height: 50px"
-                  :src="url+entitymod.url"
+                  :src="url+entitymod.url+urlm1"
                   v-if="entitymod.url!=null"></el-image>
                 <el-upload
                   class="avatar-uploader"
@@ -278,7 +273,25 @@
 
         </div>
       </el-tab-pane>
-      <el-tab-pane label="批量添加">配置管理</el-tab-pane>
+      <el-tab-pane label="批量添加" v-if="userInfo.authmap.dowloudExcel!=null">
+        <div style="width:200px;height: 200px">
+          <el-upload
+            class="upload-demo"
+            ref="dowloudExcel"
+            action="http://localhost:10000/api/manger/dowloudExcel"
+            :on-preview="handlePreview"
+            :on-remove="handleRemove"
+            :before-upload="beforeUpload"
+            :on-success="handleAvatarSuccess"
+            :auto-upload="false"
+            :limit="1">
+            <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
+            <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">批量添加</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传xlsx文件，且不超过500kb</div>
+          </el-upload>
+        </div>
+
+      </el-tab-pane>
     </el-tabs>
 
 
@@ -305,12 +318,12 @@
             sex:"0",
             name:"",
           },
-          url:"http://localhost:8090/",
+          url:"http://www.image.com/group1/",
           pageInfo:{
             pageSize:5,
             page:1,
           },
-          pid:this.$store.state.userInfo.id,
+          userInfo:JSON.parse(window.localStorage.getItem("userInfo")),
           dialogVisible: false,
           dialogVisible1: false,
           dialogVisible2: false,
@@ -321,7 +334,9 @@
           imageUrl:"",
           options:[],
           value:"",
-          userId:""
+          userId:"",
+          urlm:"_100x100.png",
+          urlm1:".png"
 
         }
       },
@@ -329,27 +344,45 @@
         this.getList(1,this.pageInfo.pageSize)
     },
       methods: {
+        submitUpload() {
+          this.$refs.dowloudExcel.submit();
+        },
+        handleRemove(file, fileList) {
+          console.log(file, fileList);
+        },
+        handlePreview(file) {
+          console.log(file);
+        },
+        beforeUpload(file){
+
+          const xlsx= file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+
+          if (!xlsx) {
+            this.$message.error('上传只能是xlsx格式!');
+          }
+
+          return xlsx;
+        },
         addRole(){
 
+
+
           this.$axios.post(this.domain.serverpath+"addUr",{userId:this.userId,roleId:this.value}).then((res)=>{
-            if(res.code=200){
+
+            if(res.data.code==200){
             this.$message({
               message: '恭喜你，绑定成功',
               type: 'success',
               duration:'1000'
             });
 
-              this.dialogVisible=false;
-              this.dialogVisible1=false;
-              this.dialogVisible2=false;
-              this.getList(1,this.pageInfo.pageSize);
-          }else{
-            this.$message({
-              message: '绑定失败',
-              type: 'error',
-              duration:'1000'
-            });
+
           }
+            this.dialogVisible=false;
+            this.dialogVisible1=false;
+            this.dialogVisible2=false;
+            this.getList(1,this.pageInfo.pageSize);
           }).catch((x)=>{
             this.$message({
               message: '你没有操作权限',
@@ -409,11 +442,33 @@
           console.log(index, row);
         },
         bdRole(index, row) {
+          var leval=this.userInfo.roleInfo.leval;
+          if(this.userInfo.roleInfo.leval==4){
+              leval=this.userInfo.roleInfo.leval-1;
+          }
+          if(row.id==this.userInfo.id){
+            this.$message({
+              message: '你无法为自己绑定角色',
+              type: 'error',
+              duration:'1000'
+            });
+            return;
+          }
+
+          if(row.roleInfo.leval<=this.userInfo.roleInfo.leval){
+            this.$message({
+              message: '你没有为上级和平级绑定角色',
+              type: 'error',
+              duration:'1000'
+            });
+            return;
+          }
+
           this.userId=row.id;
           this.dialogVisible2=true;
           this.dialogVisible1=false;
           this.dialogVisible=false;
-          this.$axios.post(this.domain.serverpath+"findRole").then((res)=>{
+          this.$axios.post(this.domain.serverpath+"findRole",{leval:this.userInfo.roleInfo.leval}).then((res)=>{
             this.options=res.data;
           }).catch((x)=>{
             this.$message({
@@ -426,6 +481,27 @@
         },
 
         handleDelete(index, row) {
+
+          if(row.id==this.userInfo.id){
+
+            this.$message({
+              message: '你无法删除你自己',
+              type: 'error',
+              duration:'1000'
+            });
+            return
+          }
+
+          if(this.userInfo.roleInfo.leval>=row.roleInfo.leval){
+            this.$message({
+              message: '你没有删除该用户的权限',
+              type: 'error',
+              duration:'1000'
+            });
+            return
+          }
+
+
 
           this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
             confirmButtonText: '确定',
@@ -475,11 +551,13 @@
           console.log(`当前页: ${val}`);
         },
         handleClose(done) {
+          this.$refs.dowloudExcel.clearFiles();
           this.dialogVisible=false;
           this.dialogVisible2=false;
           this.dialogVisible1=false;
           this.entitymod={};
           this.imageUrl="";
+
           this.getList(this.pageInfo.page,this.pageInfo.pageSize);
         },
         add(){
@@ -495,10 +573,23 @@
           this.imageUrl = URL.createObjectURL(file.raw);
         },
         handleAvatarSuccess(res){
-          console.log(res);
+          this.$refs.dowloudExcel.clearFiles();
           if(res.code==500){
             this.$message({
               message: '登录名已经存在',
+              type: 'error',
+              duration:'1000'
+            });
+          }else if(res.code==413){
+
+            this.$message({
+              message: res.result,
+              type: 'error',
+              duration:'2000'
+            });
+          }else if(res.code==415){
+            this.$message({
+              message: '手机号已经注册过',
               type: 'error',
               duration:'1000'
             });
@@ -512,6 +603,7 @@
             this.dialogVisible=false;
             this.dialogVisible1=false;
             this.dialogVisible2=false;
+
             this.getList(1,this.pageInfo.pageSize);
           }
 
@@ -553,6 +645,15 @@
           if(this.entitymod.password==null||this.entitymod.password===""){
             this.$message({
               message: '密码不能为空',
+              type: 'error',
+              duration:'1000'
+            });
+            return;
+          }
+          var patrn=/^(\w){6,20}$/;
+          if(!patrn.test(this.entitymod.password)){
+            this.$message({
+              message: '密码格式不正确',
               type: 'error',
               duration:'1000'
             });
@@ -635,7 +736,16 @@
         });
         return;
       }
-
+           var reg = /(^1\d{10}$)|(^[0-9]\d{7}$)/;
+           var re = new RegExp(reg);
+           if(!re.test(this.entitymod.tel)){
+             this.$message({
+               message: '手机号格式不正确',
+               type: 'error',
+               duration:'1000'
+             });
+             return;
+           }
 
 
       if(this.imageUrl!=null&&this.imageUrl!="") {
@@ -671,7 +781,52 @@
         })
       }
 
-    }
+    },
+        downExcel(){
+          if(this.pageInfo.page==null){
+            this.pageInfo.page=1
+          }
+          if(this.where.dt1==null){
+            this.where.dt1=""
+          }
+          if(this.where.dt2==null){
+            this.where.dt2=""
+          }
+          if(this.where.name==null){
+            this.where. name=""
+          }
+          this.$axios.post(this.domain.serverpath+"downexcel" +
+            "?page="+this.pageInfo.page+"&pageSize="+this.pageInfo.pageSize+"&sex="+this.where.sex+"&dt1="+this.where.dt1+"&dt2="+this.where.dt2+"&name="+this.where.name).then((res)=>{
+
+            if(res.data.code==500){
+
+              this.$message({
+                message: '导出失败',
+                type: 'error',
+                duration:'1000'
+              });
+            }else{
+              this.$message({
+                message: '导出成功',
+                type: 'success',
+                duration:'1000'
+              });
+              }
+          }).catch((x)=>{
+            this.$message({
+              message: '你没有操作权限',
+              type: 'error',
+              duration:'1000'
+            });
+          })
+
+
+
+
+        },
+
+
+
 
 
 

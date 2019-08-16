@@ -10,6 +10,8 @@ import gloable from './store/gloable'
 //存入全局备用
 Vue.prototype.domain=gloable
 
+//存入全局备用
+Vue.prototype.domain=gloable
 //引入elementUI
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
@@ -67,7 +69,18 @@ axios.interceptors.request.use((config)=>{
 
 
   }
-  config.headers.token=store.state.token;
+  if(config.url.includes("loginCount")){//如果是获取验证码的路径
+    //没有Cookie的话添加Cookie
+    let aucokie=Cookies.get("authcode")
+    if(aucokie==null){
+      Cookies.set("authcode", "", {path: "/", domain: "localhost", age: -1});
+    }
+
+
+
+
+  }
+  config.headers.token=window.localStorage.getItem("token");
 
   return config;
 })
